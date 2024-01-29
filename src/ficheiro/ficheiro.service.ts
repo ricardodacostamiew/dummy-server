@@ -1,6 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, StreamableFile } from '@nestjs/common';
 import { CreateFicheiroDto } from './dto/create-ficheiro.dto';
 import { UpdateFicheiroDto } from './dto/update-ficheiro.dto';
+import { createReadStream, existsSync } from 'fs';
+import { join } from 'path';
+import { Response } from 'express';
 
 @Injectable()
 export class FicheiroService {
@@ -12,8 +15,19 @@ export class FicheiroService {
     return `This action returns all ficheiro`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} ficheiro`;
+  getFile(language: string, res: Response): StreamableFile {
+    if (!existsSync(`assets/${language}.json`)) {
+      console.log(`${language} does not exist, "en" returned instead`);
+      language = 'en';
+    }
+    const file = createReadStream(
+      join(process.cwd(), `assets/${language}.json`),
+    );
+    res.set({
+      'Content-Type': 'application/json',
+      'Content-Disposition': `attachment; filename="${language}.json"`,
+    });
+    return new StreamableFile(file);
   }
 
   update(id: number, updateFicheiroDto: UpdateFicheiroDto) {
